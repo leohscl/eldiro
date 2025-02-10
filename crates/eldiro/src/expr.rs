@@ -1,5 +1,4 @@
 use crate::env::Env;
-use crate::statement::Statement;
 use crate::utils::extract_digits;
 use crate::utils::extract_whitespace;
 use crate::utils::tag;

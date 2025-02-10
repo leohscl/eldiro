@@ -7,7 +7,7 @@ use crate::{
 
 #[derive(Debug, PartialEq)]
 pub(crate) struct Block {
-    exprs: Vec<Statement>,
+    pub(crate) exprs: Vec<Statement>,
 }
 
 impl Block {

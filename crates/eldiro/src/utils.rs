@@ -64,8 +64,11 @@ fn take_while1(
     }
 }
 
+#[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::utils::{
+        extract_digits, extract_iden, extract_whitespace, extract_whitespace1, tag,
+    };
 
     #[test]
     fn extract_whitespace_empty() {
