@@ -8,7 +8,7 @@ pub struct Env<'parent> {
 }
 
 impl<'parent> Env<'parent> {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             bindings: HashMap::new(),
             parent_env: None,
