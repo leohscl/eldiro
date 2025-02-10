@@ -7,6 +7,7 @@ pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
 pub(crate) fn extract_whitespace(s: &str) -> (&str, &str) {
     take_while(s, |c| WHITESPACE.contains(&c))
 }
+
 pub(crate) fn extract_whitespace1(s: &str) -> Result<(&str, &str), String> {
     take_while1(
         s,

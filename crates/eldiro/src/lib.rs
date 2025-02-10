@@ -1,13 +1,15 @@
 mod binding_def;
 mod env;
 mod expr;
+mod func_def;
 mod statement;
 mod utils;
 mod val;
-use statement::Statement;
 
 pub use env::Env;
 pub use val::Val;
+
+use statement::Statement;
 
 pub struct Parse(Statement);
 

@@ -1,12 +1,14 @@
+mod binding_usage;
+mod block;
+
+pub(crate) use binding_usage::BindingUsage;
+pub(crate) use block::Block;
+
 use crate::env::Env;
 use crate::utils::extract_digits;
 use crate::utils::extract_whitespace;
 use crate::utils::tag;
 use crate::val::Val;
-use binding_usage::BindingUsage;
-use block::Block;
-mod binding_usage;
-mod block;
 
 #[derive(Debug, PartialEq)]
 pub(crate) enum Expr {
