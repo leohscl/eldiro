@@ -1,23 +1,27 @@
+use crate::env::Env;
 use crate::utils::extract_iden;
 use crate::val::Val;
-use crate::env::Env;
 
 #[derive(Debug, PartialEq)]
-pub struct BindingUsage {
-    pub name: String,
+pub(crate) struct BindingUsage {
+    name: String,
 }
 
 impl BindingUsage {
-    pub fn new(s: &str) -> Result<(&str, Self), String> {
+    pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         let (s, name) = extract_iden(s)?;
-        Ok((s, BindingUsage {name: name.to_string()}))
+        Ok((
+            s,
+            BindingUsage {
+                name: name.to_string(),
+            },
+        ))
     }
 
-    pub fn eval(&self, env: &Env) -> Result<Val, String> {
+    pub(crate) fn eval(&self, env: &Env) -> Result<Val, String> {
         env.get_binding_value(&self.name)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -27,14 +31,12 @@ mod tests {
     fn binding_usage_new() {
         assert_eq!(
             BindingUsage::new("abc"),
-            Ok(
-                (
-                    "",
-                    BindingUsage {
-                        name: "abc".to_string()
-                    }
-                )
-            )
+            Ok((
+                "",
+                BindingUsage {
+                    name: "abc".to_string()
+                }
+            ))
         )
     }
 
@@ -53,9 +55,6 @@ mod tests {
         let val = Val::Number(10);
         env.insert_binding(name.clone(), val.clone());
         let binding_usage = BindingUsage::new(&name).unwrap().1;
-        assert_eq!(
-            binding_usage.eval(&env),
-            Ok(val)
-        )
+        assert_eq!(binding_usage.eval(&env), Ok(val))
     }
 }

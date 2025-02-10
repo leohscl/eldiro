@@ -1,53 +1,53 @@
-use binding_usage::BindingUsage;
 use crate::env::Env;
 use crate::statement::Statement;
 use crate::utils::extract_digits;
 use crate::utils::extract_whitespace;
 use crate::utils::tag;
 use crate::val::Val;
+use binding_usage::BindingUsage;
 use block::Block;
-pub mod binding_usage;
-pub mod block;
+mod binding_usage;
+mod block;
 
 #[derive(Debug, PartialEq)]
-pub enum Expr {
+pub(crate) enum Expr {
     Number(Number),
-    Operation {lhs: Number, rhs: Number, op: Op},
+    Operation { lhs: Number, rhs: Number, op: Op },
     Block(Block),
     BindingUsage(BindingUsage),
 }
 
 impl Expr {
-    pub fn new(s: &str) -> Result<(&str, Self), String> {
+    pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         Self::new_operation(s)
             .or_else(|_| Self::new_number(s))
             .or_else(|_| Self::new_block(s))
             .or_else(|_| Self::new_binding_usage(s))
     }
 
-    pub fn new_number(s: &str) -> Result<(&str, Self), String> {
+    fn new_number(s: &str) -> Result<(&str, Self), String> {
         Number::new(s).map(|(s, number)| (s, Self::Number(number)))
     }
 
-    pub fn new_block(s: &str) -> Result<(&str, Self), String> {
+    fn new_block(s: &str) -> Result<(&str, Self), String> {
         Block::new(s).map(|(s, block)| (s, Self::Block(block)))
     }
 
-    pub fn new_binding_usage(s: &str) -> Result<(&str, Self), String> {
+    fn new_binding_usage(s: &str) -> Result<(&str, Self), String> {
         BindingUsage::new(s).map(|(s, binding)| (s, Self::BindingUsage(binding)))
     }
 
-    pub fn new_operation(s: &str) -> Result<(&str, Self), String> {
+    fn new_operation(s: &str) -> Result<(&str, Self), String> {
         let remaining_exp = s;
         let (remaining_exp, lhs) = Number::new(remaining_exp)?;
         let (remaining_exp, _) = extract_whitespace(remaining_exp);
         let (remaining_exp, op) = Op::new(remaining_exp)?;
         let (remaining_exp, _) = extract_whitespace(remaining_exp);
         let (remaining_exp, rhs) = Number::new(remaining_exp)?;
-        Ok((remaining_exp, Self::Operation {lhs, rhs, op}))
+        Ok((remaining_exp, Self::Operation { lhs, rhs, op }))
     }
 
-    pub fn eval(&self, env: &Env) -> Result<Val, String> {
+    pub(crate) fn eval(&self, env: &Env) -> Result<Val, String> {
         match self {
             Self::Number(Number(num)) => Ok(Val::Number(*num)),
             Self::Operation { lhs, rhs, op } => {
@@ -61,28 +61,24 @@ impl Expr {
                 };
                 Ok(Val::Number(result))
             }
-            Self::BindingUsage(binding) => {
-                binding.eval(env)
-            }
-            Self::Block(block) => {
-                block.eval(env)
-            }
+            Self::BindingUsage(binding) => binding.eval(env),
+            Self::Block(block) => block.eval(env),
         }
     }
 }
 
-
 #[derive(Debug, PartialEq)]
-pub enum Op {
+pub(crate) enum Op {
     Addition,
     Substraction,
     Multiplication,
-    Division
+    Division,
 }
 
 impl Op {
-    pub fn new(s: &str) -> Result<(&str, Self), String> {
-        tag(s, "+").map(|s| (s, Self::Addition))
+    fn new(s: &str) -> Result<(&str, Self), String> {
+        tag(s, "+")
+            .map(|s| (s, Self::Addition))
             .or_else(|_| tag(s, "-").map(|s| (s, Self::Substraction)))
             .or_else(|_| tag(s, "/").map(|s| (s, Self::Division)))
             .or_else(|_| tag(s, "*").map(|s| (s, Self::Multiplication)))
@@ -90,10 +86,10 @@ impl Op {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Number(pub i32);
+pub(crate) struct Number(pub(crate) i32);
 
 impl Number {
-    pub fn new(s: &str) -> Result<(&str, Self), String> {
+    pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         let (remaining_input, num_s) = extract_digits(s)?;
         let num = Number(num_s.parse().unwrap());
         Ok((remaining_input, num))
@@ -103,11 +99,9 @@ impl Number {
 #[cfg(test)]
 mod tests {
 
-
     use crate::statement::Statement;
 
     use super::*;
-
 
     #[test]
     fn evaluate_mul() {
@@ -116,7 +110,8 @@ mod tests {
                 lhs: Number(4),
                 rhs: Number(2),
                 op: Op::Multiplication,
-            }.eval(&Env::new()),
+            }
+            .eval(&Env::new()),
             Ok(Val::Number(8))
         );
     }
@@ -128,7 +123,8 @@ mod tests {
                 lhs: Number(5),
                 rhs: Number(2),
                 op: Op::Division,
-            }.eval(&Env::new()),
+            }
+            .eval(&Env::new()),
             Ok(Val::Number(2))
         );
     }
@@ -140,7 +136,8 @@ mod tests {
                 lhs: Number(8),
                 rhs: Number(15),
                 op: Op::Addition,
-            }.eval(&Env::new()),
+            }
+            .eval(&Env::new()),
             Ok(Val::Number(23))
         );
     }
@@ -151,7 +148,8 @@ mod tests {
                 lhs: Number(5),
                 rhs: Number(23),
                 op: Op::Substraction,
-            }.eval(&Env::new()),
+            }
+            .eval(&Env::new()),
             Ok(Val::Number(-18))
         );
     }
@@ -162,11 +160,9 @@ mod tests {
             Expr::new("value"),
             Ok((
                 "",
-                Expr::BindingUsage(
-                    BindingUsage {
-                        name: "value".to_string()
-                    }
-                )
+                Expr::BindingUsage(BindingUsage {
+                    name: "value".to_string()
+                })
             ))
         );
     }
@@ -175,29 +171,27 @@ mod tests {
     fn parse_block() {
         assert_eq!(
             Expr::new("{ 6 }"),
-            Ok(("",
-                Expr::Block(
-                    Block {
-                        exprs: vec![
-                            Statement::Expr(Expr::Number(Number(6)))
-                        ]
-                    }
-                )
+            Ok((
+                "",
+                Expr::Block(Block {
+                    exprs: vec![Statement::Expr(Expr::Number(Number(6)))]
+                })
             ))
         );
     }
-    
+
     #[test]
     fn parse_expression() {
         assert_eq!(
             Expr::new("1+2"),
-            Ok(
-                ("", Expr::Operation {
+            Ok((
+                "",
+                Expr::Operation {
                     lhs: Number(1),
                     rhs: Number(2),
                     op: Op::Addition,
-                })
-            )
+                }
+            ))
         );
     }
 
@@ -210,13 +204,14 @@ mod tests {
     fn parse_expression_space() {
         assert_eq!(
             Expr::new("1 + 2"),
-            Ok(
-                ("", Expr::Operation {
+            Ok((
+                "",
+                Expr::Operation {
                     lhs: Number(1),
                     rhs: Number(2),
                     op: Op::Addition,
-                })
-            )
+                }
+            ))
         );
     }
 

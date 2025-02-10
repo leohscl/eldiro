@@ -1,62 +1,68 @@
 const WHITESPACE: &[char] = &[' ', '\n'];
 
-pub fn extract_digits(s: &str) -> Result<(&str, &str), String> {
+pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
     take_while1(s, |c| c.is_ascii_digit(), "Expected digits".to_string())
 }
 
-pub fn extract_whitespace(s: &str) -> (&str, &str) {
+pub(crate) fn extract_whitespace(s: &str) -> (&str, &str) {
     take_while(s, |c| WHITESPACE.contains(&c))
 }
-pub fn extract_whitespace1(s: &str) -> Result<(&str, &str), String> {
-    take_while1(s, |c| WHITESPACE.contains(&c), "Expected whitespace".to_string())
+pub(crate) fn extract_whitespace1(s: &str) -> Result<(&str, &str), String> {
+    take_while1(
+        s,
+        |c| WHITESPACE.contains(&c),
+        "Expected whitespace".to_string(),
+    )
 }
 
-pub fn tag<'a, 'b>(s: &'a str, to_extract: &'b str) -> Result<&'a str, String> {
+pub(crate) fn tag<'a, 'b>(s: &'a str, to_extract: &'b str) -> Result<&'a str, String> {
     let len_extract = to_extract.len();
     if s.starts_with(to_extract) {
         Ok(&s[len_extract..])
     } else {
         Err(format!("expected {}", to_extract))
     }
-
 }
 
-pub fn extract_iden(s: &str) -> Result<(&str, &str), String> {
+pub(crate) fn extract_iden(s: &str) -> Result<(&str, &str), String> {
     let first_c = s.chars().next();
     if let Some(c) = first_c {
         if c.is_ascii_alphabetic() {
-            return take_while1(s, |c| c.is_alphanumeric(), "expected non-empty iden".to_string())
+            return take_while1(
+                s,
+                |c| c.is_alphanumeric(),
+                "expected non-empty iden".to_string(),
+            );
         }
-    } 
+    }
     Err("expected non-empty iden".to_string())
 }
 
-pub fn take_while(s: &str, accept: impl Fn(char) -> bool) -> (&str, &str) {
-    let digits_end = s.chars().enumerate().find_map(|(i, c)| {
-        if accept(c) {
-            None
-        } else {
-            Some(i)
-        }
-    }).unwrap_or(s.len());
+fn take_while(s: &str, accept: impl Fn(char) -> bool) -> (&str, &str) {
+    let digits_end = s
+        .chars()
+        .enumerate()
+        .find_map(|(i, c)| if accept(c) { None } else { Some(i) })
+        .unwrap_or(s.len());
     (&s[digits_end..], &s[0..digits_end])
 }
 
-pub fn take_while1(s: &str, accept: impl Fn(char) -> bool, error_msg: String) -> Result<(&str, &str), String> {
-    let digits_end = s.chars().enumerate().find_map(|(i, c)| {
-        if accept(c) {
-            None
-        } else {
-            Some(i)
-        }
-    }).unwrap_or(s.len());
+fn take_while1(
+    s: &str,
+    accept: impl Fn(char) -> bool,
+    error_msg: String,
+) -> Result<(&str, &str), String> {
+    let digits_end = s
+        .chars()
+        .enumerate()
+        .find_map(|(i, c)| if accept(c) { None } else { Some(i) })
+        .unwrap_or(s.len());
     if digits_end == 0 {
         Err(error_msg)
     } else {
         Ok((&s[digits_end..], &s[0..digits_end]))
     }
 }
-
 
 mod tests {
     use super::*;
