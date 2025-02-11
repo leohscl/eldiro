@@ -13,7 +13,11 @@ use crate::val::Val;
 #[derive(Debug, PartialEq)]
 pub(crate) enum Expr {
     Number(Number),
-    Operation { lhs: Number, rhs: Number, op: Op },
+    Operation {
+        lhs: Box<Expr>,
+        rhs: Box<Expr>,
+        op: Op,
+    },
     Block(Block),
     BindingUsage(BindingUsage),
 }
@@ -22,6 +26,12 @@ impl Expr {
     pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         Self::new_operation(s)
             .or_else(|_| Self::new_number(s))
+            .or_else(|_| Self::new_block(s))
+            .or_else(|_| Self::new_binding_usage(s))
+    }
+
+    fn new_non_operation(s: &str) -> Result<(&str, Self), String> {
+        Self::new_number(s)
             .or_else(|_| Self::new_block(s))
             .or_else(|_| Self::new_binding_usage(s))
     }
@@ -40,20 +50,27 @@ impl Expr {
 
     fn new_operation(s: &str) -> Result<(&str, Self), String> {
         let remaining_exp = s;
-        let (remaining_exp, lhs) = Number::new(remaining_exp)?;
+        let (remaining_exp, lhs) = Self::new_non_operation(remaining_exp)?;
         let (remaining_exp, _) = extract_whitespace(remaining_exp);
         let (remaining_exp, op) = Op::new(remaining_exp)?;
         let (remaining_exp, _) = extract_whitespace(remaining_exp);
-        let (remaining_exp, rhs) = Number::new(remaining_exp)?;
-        Ok((remaining_exp, Self::Operation { lhs, rhs, op }))
+        let (remaining_exp, rhs) = Self::new_non_operation(remaining_exp)?;
+        Ok((
+            remaining_exp,
+            Self::Operation {
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                op,
+            },
+        ))
     }
 
     pub(crate) fn eval(&self, env: &Env) -> Result<Val, String> {
         match self {
             Self::Number(Number(num)) => Ok(Val::Number(*num)),
             Self::Operation { lhs, rhs, op } => {
-                let lhs_num = lhs.0;
-                let rhs_num = rhs.0;
+                let lhs_num = lhs.eval(env)?.get_number()?;
+                let rhs_num = rhs.eval(env)?.get_number()?;
                 let result = match op {
                     Op::Addition => lhs_num + rhs_num,
                     Op::Substraction => lhs_num - rhs_num,
@@ -108,8 +125,8 @@ mod tests {
     fn evaluate_mul() {
         assert_eq!(
             Expr::Operation {
-                lhs: Number(4),
-                rhs: Number(2),
+                lhs: Box::new(Expr::Number(Number(4))),
+                rhs: Box::new(Expr::Number(Number(2))),
                 op: Op::Multiplication,
             }
             .eval(&Env::new()),
@@ -121,8 +138,8 @@ mod tests {
     fn evaluate_div() {
         assert_eq!(
             Expr::Operation {
-                lhs: Number(5),
-                rhs: Number(2),
+                lhs: Box::new(Expr::Number(Number(5))),
+                rhs: Box::new(Expr::Number(Number(2))),
                 op: Op::Division,
             }
             .eval(&Env::new()),
@@ -134,8 +151,8 @@ mod tests {
     fn evaluate_add() {
         assert_eq!(
             Expr::Operation {
-                lhs: Number(8),
-                rhs: Number(15),
+                lhs: Box::new(Expr::Number(Number(8))),
+                rhs: Box::new(Expr::Number(Number(15))),
                 op: Op::Addition,
             }
             .eval(&Env::new()),
@@ -146,8 +163,8 @@ mod tests {
     fn evaluate_sub() {
         assert_eq!(
             Expr::Operation {
-                lhs: Number(5),
-                rhs: Number(23),
+                lhs: Box::new(Expr::Number(Number(5))),
+                rhs: Box::new(Expr::Number(Number(23))),
                 op: Op::Substraction,
             }
             .eval(&Env::new()),
@@ -188,8 +205,8 @@ mod tests {
             Ok((
                 "",
                 Expr::Operation {
-                    lhs: Number(1),
-                    rhs: Number(2),
+                    lhs: Box::new(Expr::Number(Number(1))),
+                    rhs: Box::new(Expr::Number(Number(2))),
                     op: Op::Addition,
                 }
             ))
@@ -208,8 +225,8 @@ mod tests {
             Ok((
                 "",
                 Expr::Operation {
-                    lhs: Number(1),
-                    rhs: Number(2),
+                    lhs: Box::new(Expr::Number(Number(1))),
+                    rhs: Box::new(Expr::Number(Number(2))),
                     op: Op::Addition,
                 }
             ))

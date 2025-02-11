@@ -1,7 +1,7 @@
 use crate::{
     env::Env,
     statement::Statement,
-    utils::{extract_whitespace, tag},
+    utils::{extract_whitespace, extract_whitespace_separated, tag},
     val::Val,
 };
 
@@ -14,13 +14,7 @@ impl Block {
     pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         let s = tag(s, "{")?;
         let (s, _) = extract_whitespace(s);
-        let mut exprs = Vec::new();
-        let mut s = s;
-        while let Ok((new_s, statement)) = Statement::new(s) {
-            exprs.push(statement);
-            (s, _) = extract_whitespace(new_s);
-        }
-        let (s, _) = extract_whitespace(s);
+        let (s, exprs) = extract_whitespace_separated(s, Statement::new);
         let s = tag(s, "}")?;
         Ok((s, Block { exprs }))
     }

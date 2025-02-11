@@ -39,6 +39,19 @@ pub(crate) fn extract_iden(s: &str) -> Result<(&str, &str), String> {
     Err("expected non-empty iden".to_string())
 }
 
+pub(crate) fn extract_whitespace_separated<'a, T>(
+    s: &'a str,
+    extractor: impl Fn(&'a str) -> Result<(&'a str, T), String>,
+) -> (&'a str, Vec<T>) {
+    let mut vec = Vec::new();
+    let mut s = s;
+    while let Ok((new_s, extracted)) = extractor(s) {
+        vec.push(extracted);
+        (s, _) = extract_whitespace(new_s);
+    }
+    (s, vec)
+}
+
 fn take_while(s: &str, accept: impl Fn(char) -> bool) -> (&str, &str) {
     let digits_end = s
         .chars()
