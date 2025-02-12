@@ -4,7 +4,7 @@ use crate::expr::Expr;
 use crate::func_def::FuncDef;
 use crate::val::Val;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) enum Statement {
     Expr(Expr),
     BindingDef(BindingDef),
@@ -25,7 +25,10 @@ impl Statement {
                 Ok(Val::Empty)
             }
             Statement::Expr(expr) => expr.eval(&env),
-            Statement::FuncDef(function_def) => todo!(),
+            Statement::FuncDef(function_def) => {
+                function_def.eval(env)?;
+                Ok(Val::Empty)
+            }
         }
     }
 }
@@ -54,6 +57,20 @@ mod tests {
                 val: Expr::Number(Number(2)),
             })
             .eval(&mut Env::new()),
+            Ok(Val::Empty)
+        )
+    }
+
+    #[test]
+    fn eval_function_def() {
+        assert_eq!(
+            Statement::FuncDef(FuncDef {
+                name: "identity".to_string(),
+                params: vec!["x".to_string()],
+                body: Box::new(Statement::Expr(Expr::BindingUsage(BindingUsage {
+                    name: "x".to_string()
+                })))
+            }).eval(&mut Env::new()),
             Ok(Val::Empty)
         )
     }

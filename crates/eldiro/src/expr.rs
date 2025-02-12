@@ -10,7 +10,7 @@ use crate::utils::extract_whitespace;
 use crate::utils::tag;
 use crate::val::Val;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) enum Expr {
     Number(Number),
     Operation {
@@ -85,7 +85,7 @@ impl Expr {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) enum Op {
     Addition,
     Substraction,
@@ -103,7 +103,7 @@ impl Op {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) struct Number(pub(crate) i32);
 
 impl Number {
@@ -120,6 +120,19 @@ mod tests {
     use crate::statement::Statement;
 
     use super::*;
+
+    #[test]
+    fn evaluate_not_num() {
+        assert!(
+            Expr::Operation {
+                lhs: Box::new(Expr::Number(Number(4))),
+                rhs: Box::new(Expr::Block(Block { exprs: vec![] })),
+                op: Op::Multiplication,
+            }
+            .eval(&Env::new())
+            .is_err()
+        );
+    }
 
     #[test]
     fn evaluate_mul() {

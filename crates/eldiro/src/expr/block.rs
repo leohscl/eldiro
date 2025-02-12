@@ -5,7 +5,7 @@ use crate::{
     val::Val,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) struct Block {
     pub(crate) exprs: Vec<Statement>,
 }

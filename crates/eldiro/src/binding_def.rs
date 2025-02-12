@@ -4,7 +4,7 @@ use crate::{
     utils::{extract_iden, extract_whitespace, extract_whitespace1, tag},
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub(crate) struct BindingDef {
     pub(crate) name: String,
     pub(crate) val: Expr,
