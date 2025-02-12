@@ -14,7 +14,7 @@ impl Block {
     pub(crate) fn new(s: &str) -> Result<(&str, Self), String> {
         let s = tag(s, "{")?;
         let (s, _) = extract_whitespace(s);
-        let (s, exprs) = extract_whitespace_separated(s, Statement::new);
+        let (s, exprs) = extract_whitespace_separated(s, Statement::new, extract_whitespace)?;
         let s = tag(s, "}")?;
         Ok((s, Block { exprs }))
     }

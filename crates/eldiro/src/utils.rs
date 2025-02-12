@@ -1,4 +1,5 @@
 const WHITESPACE: &[char] = &[' ', '\n'];
+//const WHITESPACE: &[char] = &[' ', '\n'];
 
 pub(crate) fn extract_digits(s: &str) -> Result<(&str, &str), String> {
     take_while1(s, |c| c.is_ascii_digit(), "Expected digits".to_string())
@@ -31,7 +32,7 @@ pub(crate) fn extract_iden(s: &str) -> Result<(&str, &str), String> {
         if c.is_ascii_alphabetic() {
             return take_while1(
                 s,
-                |c| c.is_alphanumeric(),
+                |c| c.is_alphanumeric() || c == '_',
                 "expected non-empty iden".to_string(),
             );
         }
@@ -39,20 +40,35 @@ pub(crate) fn extract_iden(s: &str) -> Result<(&str, &str), String> {
     Err("expected non-empty iden".to_string())
 }
 
+
 pub(crate) fn extract_whitespace_separated<'a, T>(
     s: &'a str,
     extractor: impl Fn(&'a str) -> Result<(&'a str, T), String>,
-) -> (&'a str, Vec<T>) {
+    separator_parser: impl Fn(&'a str) -> (&str, &str)
+) -> Result<(&'a str, Vec<T>), String> {
     let mut vec = Vec::new();
     let mut s = s;
     while let Ok((new_s, extracted)) = extractor(s) {
         vec.push(extracted);
-        (s, _) = extract_whitespace(new_s);
+        (s, _) = separator_parser(new_s);
     }
-    (s, vec)
+    Ok((s, vec))
 }
 
-fn take_while(s: &str, accept: impl Fn(char) -> bool) -> (&str, &str) {
+pub(crate) fn extract_whitespace_separated1<'a, T>(
+    s: &'a str,
+    extractor: impl Fn(&'a str) -> Result<(&'a str, T), String>,
+    separator_parser: impl Fn(&'a str) -> (&str, &str)
+) -> Result<(&'a str, Vec<T>), String> {
+    let (s, vec) = extract_whitespace_separated(s, extractor, separator_parser)?;
+    if vec.is_empty() {
+        Err(format!("extractor extracted 0 elements"))
+    } else {
+        Ok((s, vec))
+    }
+}
+
+pub(crate) fn take_while(s: &str, accept: impl Fn(char) -> bool) -> (&str, &str) {
     let digits_end = s
         .chars()
         .enumerate()
@@ -61,7 +77,7 @@ fn take_while(s: &str, accept: impl Fn(char) -> bool) -> (&str, &str) {
     (&s[digits_end..], &s[0..digits_end])
 }
 
-fn take_while1(
+pub(crate) fn take_while1(
     s: &str,
     accept: impl Fn(char) -> bool,
     error_msg: String,

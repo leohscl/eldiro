@@ -1,6 +1,6 @@
 use crate::{
     statement::Statement,
-    utils::{extract_iden, extract_whitespace1, extract_whitespace_separated, tag}, Env, Val,
+    utils::{extract_iden, extract_whitespace, extract_whitespace1, extract_whitespace_separated, tag}, Env, Val,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -18,7 +18,7 @@ impl FuncDef {
         let (s, _) = extract_whitespace1(s)?;
         let (s, params) = extract_whitespace_separated(s, |s| {
             extract_iden(s).map(|(s, iden)| (s, iden.to_string()))
-        });
+        }, extract_whitespace)?;
         let params = params.into_iter().map(|s| s.to_string()).collect();
         let s = tag(s, "=>")?;
         let (s, _) = extract_whitespace1(s)?;

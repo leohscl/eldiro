@@ -5,6 +5,7 @@ pub(crate) use binding_usage::BindingUsage;
 pub(crate) use block::Block;
 
 use crate::env::Env;
+use crate::func_call::FuncCall;
 use crate::utils::extract_digits;
 use crate::utils::extract_whitespace;
 use crate::utils::tag;
@@ -18,6 +19,7 @@ pub(crate) enum Expr {
         rhs: Box<Expr>,
         op: Op,
     },
+    FuncCall(FuncCall),
     Block(Block),
     BindingUsage(BindingUsage),
 }
@@ -27,6 +29,7 @@ impl Expr {
         Self::new_operation(s)
             .or_else(|_| Self::new_number(s))
             .or_else(|_| Self::new_block(s))
+            .or_else(|_| Self::new_function_call(s))
             .or_else(|_| Self::new_binding_usage(s))
     }
 
@@ -42,6 +45,10 @@ impl Expr {
 
     fn new_block(s: &str) -> Result<(&str, Self), String> {
         Block::new(s).map(|(s, block)| (s, Self::Block(block)))
+    }
+
+    fn new_function_call(s: &str) -> Result<(&str, Self), String> {
+        FuncCall::new(s).map(|(s, binding)| (s, Self::FuncCall(binding)))
     }
 
     fn new_binding_usage(s: &str) -> Result<(&str, Self), String> {
@@ -81,6 +88,7 @@ impl Expr {
             }
             Self::BindingUsage(binding) => binding.eval(env),
             Self::Block(block) => block.eval(env),
+            Self::FuncCall(_f) => todo!(),
         }
     }
 }
@@ -117,7 +125,7 @@ impl Number {
 #[cfg(test)]
 mod tests {
 
-    use crate::statement::Statement;
+    use crate::{func_def::FuncDef, statement::Statement};
 
     use super::*;
 
@@ -182,6 +190,28 @@ mod tests {
             }
             .eval(&Env::new()),
             Ok(Val::Number(-18))
+        );
+    }
+
+    #[test]
+    fn parse_func_call() {
+        let mut env = Env::new();
+        env.insert_function(FuncDef {
+            name: "identity".to_string(),
+            body: Box::new(Statement::Expr(Expr::BindingUsage(BindingUsage {
+                name: "x".to_string(),
+            }))),
+            params: vec!["x".to_string()],
+        });
+        assert_eq!(
+            Expr::new("one 1"),
+            Ok((
+                "",
+                Expr::FuncCall(FuncCall {
+                    name: "one".to_string(),
+                    args: vec![Expr::Number(Number(1))],
+                })
+            ))
         );
     }
 
