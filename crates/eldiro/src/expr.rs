@@ -88,7 +88,7 @@ impl Expr {
             }
             Self::BindingUsage(binding) => binding.eval(env),
             Self::Block(block) => block.eval(env),
-            Self::FuncCall(_f) => todo!(),
+            Self::FuncCall(func_call) => func_call.eval(env),
         }
     }
 }
@@ -128,6 +128,23 @@ mod tests {
     use crate::{func_def::FuncDef, statement::Statement};
 
     use super::*;
+
+    #[test]
+    fn eval_function_call() {
+        let mut env = Env::new();
+        env.insert_function(FuncDef {
+            name: "double".to_string(),
+            body: Box::new(Statement::Expr(Expr::Operation { lhs: Box::new(Expr::BindingUsage(BindingUsage { name: "x".to_string() })), rhs: Box::new(Expr::Number(Number(2))), op: Op::Multiplication })),
+            params: vec!["x".to_string()],
+        });
+        assert_eq!(
+            Expr::FuncCall(FuncCall {
+                name: "double".to_string(),
+                args: vec![Expr::Number(Number(21))],
+            }).eval(&env),
+            Ok(Val::Number(42))
+        )
+    }
 
     #[test]
     fn evaluate_not_num() {
