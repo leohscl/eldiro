@@ -1,7 +1,35 @@
 use logos::Logos;
+use num_derive::{FromPrimitive, ToPrimitive};
+use rowan::Language;
 
-#[derive(Debug, PartialEq, Clone, Copy, Logos)]
-enum SyntaxKind {
+use crate::syntax::EldiroLanguage;
+
+pub(crate) struct Lexer<'a> {
+    inner: logos::Lexer<'a, SyntaxKind>,
+}
+
+impl<'a> Lexer<'a> {
+    pub(crate) fn new(lexer: logos::Lexer<'a, SyntaxKind>) -> Self {
+        Lexer { inner: lexer }
+    }
+}
+
+impl<'a> Iterator for Lexer<'a> {
+    type Item = (Result<SyntaxKind, ()>, &'a str);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let kind = self.inner.next()?;
+        let text = self.inner.slice();
+        Some((kind, text))
+    }
+}
+
+#[derive(
+    Debug, PartialEq, Clone, Copy, Logos, PartialOrd, Hash, Eq, Ord, FromPrimitive, ToPrimitive,
+)]
+pub(crate) enum SyntaxKind {
+    Root,
+
     #[regex(" +")]
     Whitespace,
 
@@ -37,6 +65,12 @@ enum SyntaxKind {
 
     #[regex("[0-9]+")]
     Number,
+}
+
+impl Into<SyntaxKind> for rowan::SyntaxKind {
+    fn into(self) -> SyntaxKind {
+        EldiroLanguage::kind_from_raw(self)
+    }
 }
 
 #[cfg(test)]
