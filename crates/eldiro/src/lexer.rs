@@ -12,6 +12,10 @@ impl<'a> Lexer<'a> {
     pub(crate) fn new(lexer: logos::Lexer<'a, SyntaxKind>) -> Self {
         Lexer { inner: lexer }
     }
+
+    pub(crate) fn slice(&self) -> &'a str {
+        self.inner.slice()
+    }
 }
 
 impl<'a> Iterator for Lexer<'a> {
@@ -65,6 +69,8 @@ pub(crate) enum SyntaxKind {
 
     #[regex("[0-9]+")]
     Number,
+
+    BinOp,
 }
 
 impl Into<SyntaxKind> for rowan::SyntaxKind {

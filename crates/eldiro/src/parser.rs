@@ -1,3 +1,4 @@
+use crate::expr::expr;
 use crate::lexer::Lexer;
 use crate::lexer::SyntaxKind;
 use crate::syntax::EldiroLanguage;
@@ -37,17 +38,17 @@ impl<'a> Parser<'a> {
     pub fn parse(mut self) -> Parse {
         self.start_node(SyntaxKind::Root);
 
-        if let Some((res_next, slice)) = self.lexer.next() {
-            if res_next == Ok(SyntaxKind::Number) {
-                self.builder
-                    .token(EldiroLanguage::kind_to_raw(SyntaxKind::Number), slice)
-            }
-        }
-
+        expr(&mut self);
         self.finish_node();
         Parse {
             green_node: self.builder.finish(),
         }
+    }
+
+    pub(crate) fn bump(&mut self) {
+        let (kind, slice) = self.lexer.next().unwrap();
+        self.builder
+            .token(EldiroLanguage::kind_to_raw(kind.unwrap()), slice)
     }
 
     fn start_node(&mut self, kind: SyntaxKind) {
@@ -57,26 +58,23 @@ impl<'a> Parser<'a> {
     fn finish_node(&mut self) {
         self.builder.finish_node()
     }
+
+    pub(crate) fn peek(&mut self) -> Option<Result<SyntaxKind, ()>> {
+        self.lexer.peek().map(|(kind, _)| *kind)
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn check(input: &str, expect: expect_test::Expect) {
+    let parse = Parser::new(input).parse();
+    expect.assert_eq(&parse.debug_tree())
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use expect_test::{expect, Expect};
 
-    fn check(input: &str, expect: Expect) {
-        let parse = Parser::new(input).parse();
-        expect.assert_eq(&parse.debug_tree())
-    }
-    #[test]
-    fn parse_number() {
-        check(
-            "123",
-            expect![[r#"
-Root@0..3
-  Number@0..3 "123""#]],
-        )
-    }
+    use super::*;
+    use expect_test::expect;
 
     #[test]
     fn empty_parse() {
